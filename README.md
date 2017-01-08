@@ -27,7 +27,7 @@ Now that everything was working as expected all that was left was to optically f
 The software basically puts the processor into deep-sleep for a random time, wakes up, beeps and sleeps again. If you don't care how it works you can scroll down where you can find a zip with all project files.
 
 First things first: Setup the processor and all its peripherals and start the main loop.
-```
+```c
 int main() {
 
 #ifdef DEBUG
@@ -71,7 +71,7 @@ If the DEBUG flag is set, the first thing the firmware does is setting pin 2 (PB
 To be annoying we use the internal timer to generate PWM at 16kHz (128kHz clock, no prescaler, toggle if counter/timer counts to 3) which is disabled at this point.
 
 Now let's take a look at how the sleep mode works:
-```
+```c
 void wait_sleep() {
     sleep_enable();
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);
@@ -108,7 +108,7 @@ The first thing you have to do is selecting how long to sleep by resetting the w
 Two important things I learned about the sleepmodes are that first, for wakeup to work you have to have interrupts enabled and that an interrupt service routine has to exist (even if this interrupt service routine is empty) and second that after waking up from any sleep mode the processor continues directly where it left off before going to sleep (in our case directly after the "sleep_cpu" call).
 
 The second important part is controlling the piezo speaker which is handled by the following functions:
-```
+```c
 void start_speaker() {
     // Our speaker is on PWM 0 so we need it as output
     DDRB |= _BV(PB0);
@@ -130,7 +130,7 @@ void stop_speaker() {
 start_speaker sets pin 5 (PB0) as output and starts the counter to produce PWM. If the DEBUG flag is set it also enables the LED on pin 2 (PB3). stop_speaker just reverses the process mentioned above.
 
 Last but not least the main loop calls random_time:
-```
+```c
 static uint8_t cnt8 = LFSR_SEED;
 static uint8_t prng_lfsr8(void) {
     return (cnt8 = (cnt8 >> 1) ^ (-(cnt8 & 1) & 0xB4));
@@ -144,7 +144,7 @@ uint16_t random_time() {
 This function calls a linear feedback shift register which is a very simple PRNG and uses the returned pseudorandom value to determine the length of the next sleep cycle.
 
 Back to the main loop we fit all the pieces together:
-```
+```c
     for (;;) {
         uint16_t time = random_time();
         for (uint16_t i = 0; i < time; i++) {
